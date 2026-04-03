@@ -1,15 +1,15 @@
 # Shelly Dimmer Webhook Automation for Home Assistant
 
-A standalone Home Assistant automation for the Shelly Dimmer 1/2 (Gen 1) that handles short press and hold-to-dim via Shelly URL actions (webhooks).
-Based upon the beautiful blueprint for [Shelly i4 by Ltek](https://gist.github.com/Ltek/27a83afea0a073834052bd055995da4b)
+A standalone Home Assistant automation for the Shelly Dimmer 1/2 (Gen 1) that handles short press and hold-to-dim via Shelly URL actions (webhooks).  
+Based upon the beautiful blueprint for [Shelly i4 by Ltek](https://gist.github.com/Ltek/27a83afea0a073834052bd055995da4b)  
 Built because the popular Shelly i4 blueprint does not work on Gen 1 devices. Gen 1 fires different `shelly.click` event names and, more critically, never fires `btn_up`, which breaks hold-to-dim completely. Using webhooks instead gives back the button release signal via `btn1_off_url`.
 
 ---
 
 ## Requirements
 
-- Shelly Dimmer 1 or Dimmer 2 (Gen 1)
-- Home Assistant with the attached Automation installed
+- Shelly Dimmer 1 or Dimmer 2 (Gen 1)  
+- Home Assistant with the attached Automation installed  
 - Button configured as **Detached** in the Shelly firmware (required for short/long press URLs to fire)
 
 ---
