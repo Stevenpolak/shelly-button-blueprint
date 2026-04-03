@@ -1,0 +1,102 @@
+alias: Shelly Dimmer Button Controller
+description: Webhook-based button controller for Shelly Dimmer (Gen 1) with hold-to-dim
+triggers:
+  - webhook_id: shelly_dimmer_btn1_short
+    local_only: true
+    id: btn1_short
+    trigger: webhook
+    allowed_methods:
+      - POST
+      - PUT
+      - HEAD
+      - GET
+  - webhook_id: shelly_dimmer_btn1_long
+    local_only: true
+    id: btn1_long
+    trigger: webhook
+    allowed_methods:
+      - POST
+      - PUT
+      - HEAD
+      - GET
+  - webhook_id: shelly_dimmer_btn1_off
+    local_only: true
+    id: btn1_off
+    trigger: webhook
+    allowed_methods:
+      - PUT
+      - GET
+      - HEAD
+      - POST
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: btn1_short
+        sequence:
+          - action: light.toggle
+            target:
+              # Make this your Shelly dimmer entity id!
+              entity_id: light.dummy
+      - conditions:
+          - condition: trigger
+            id: btn1_long
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ is_state(dim_target, 'off') }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ dim_target }}"
+          - variables:
+              current_brightness: "{{ state_attr(dim_target, 'brightness') | default(255) }}"
+              start_pct: "{{ (current_brightness | int / 255 * 100) | round(0) }}"
+              brightness_step_value: "{{ (dim_step | float / 100 * 255) | round(0) }}"
+              dim_direction: "{{ '+' if start_pct | int < dim_boundary | int else '-' }}"
+              dimming_active: true
+          - repeat:
+              while:
+                - condition: template
+                  value_template: >-
+                    {{ dimming_active and (
+                      dim_direction == '+' or
+                      (state_attr(dim_target, 'brightness') | default(255) | int / 255 * 100) | int > 10
+                    ) }}
+              sequence:
+                - action: light.turn_on
+                  target:
+                    entity_id: "{{ dim_target }}"
+                  data:
+                    brightness_step: "{{ dim_direction }}{{ brightness_step_value }}"
+                    transition: "{{ dim_transition }}"
+                - delay:
+                    seconds: "{{ dim_delay }}"
+          # Loop ended naturally (hit the 10% floor) — snap to exactly 10%.
+          # Note: if the button was released, mode: restart killed this instance
+          # before reaching here, so this only runs on a natural floor stop.
+          - if:
+              - condition: template
+                value_template: "{{ dim_direction == '-' }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ dim_target }}"
+                data:
+                  brightness_pct: 10
+      - conditions:
+          - condition: trigger
+            id: btn1_off
+        sequence:
+          - variables:
+              dimming_active: false
+mode: restart
+max_exceeded: silent
+variables:
+  # Make this your Shelly dimmer entity id!
+  dim_target: light.dummy
+  dim_step: 6
+  dim_delay: 0.12
+  dim_transition: 0
+  dim_boundary: 50
+  dimming_active: false
